@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MYVC Database Tables</title>
+    <script>
+        function fetchTable(tableName) {
+            fetch(`http://localhost:5000/get_table?name=${tableName}`)
+                .then(response => response.json())
+                .then(data => {
+                    let tableContent = `<h2>${tableName}</h2><table border='1'><tr>`;
+                    if (data.length > 0) {
+                        Object.keys(data[0]).forEach(key => {
+                            tableContent += `<th>${key}</th>`;
+                        });
+                        tableContent += "</tr>";
+                        data.forEach(row => {
+                            tableContent += "<tr>";
+                            Object.values(row).forEach(value => {
+                                tableContent += `<td>${value}</td>`;
+                            });
+                            tableContent += "</tr>";
+                        });
+                    } else {
+                        tableContent += "<tr><td colspan='100'>No data available</td></tr>";
+                    }
+                    tableContent += "</table>";
+                    document.getElementById("tableDisplay").innerHTML = tableContent;
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    document.getElementById("tableDisplay").innerHTML = `<p>Error fetching data for table: ${tableName}</p>`;
+                });
+        }
+
+        function fetchQuery(queryNumber) {
+            let locationID = "";
+            let familyMemberID = "";
+            let clubMemberID = "";
+
+            if (queryNumber === 2 || queryNumber === 3 || queryNumber === 6) {
+                locationID = document.getElementById(`q${queryNumber}_Input`).value;
+            } else if (queryNumber === 5) {
+                familyMemberID = document.getElementById("q5_Input").value;
+            } else if (queryNumber === 7) {
+                clubMemberID = document.getElementById("q7_Input").value;
+            }
+            console.log(locationID)
+            console.log(familyMemberID)
+            console.log(clubMemberID)
+
+
+            let url = `http://localhost:5000/execute_query?query=${queryNumber}`;
+
+            if (queryNumber === 2 || queryNumber === 3 || queryNumber === 6) {
+                url += `&locationID=${locationID}`;
+            } else if (queryNumber === 5) {
+                url += `&familyMemberID=${familyMemberID}`;
+            } else if (queryNumber === 7) {
+                url += `&clubMemberID=${clubMemberID}`;
+            }
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    let queryContent = `<h2>Query ${queryNumber}</h2><table border='1'><tr>`;
+                    if (data.length > 0) {
+                        Object.keys(data[0]).forEach(key => {
+                            queryContent += `<th>${key}</th>`;
+                        });
+                        queryContent += "</tr>";
+                        data.forEach(row => {
+                            queryContent += "<tr>";
+                            Object.values(row).forEach(value => {
+                                queryContent += `<td>${value}</td>`;
+                            });
+                            queryContent += "</tr>";
+                        });
+                    } else {
+                        queryContent += "<tr><td colspan='100'>No data available</td></tr>";
+                    }
+                    queryContent += "</table>";
+                    document.getElementById("tableDisplay").innerHTML = queryContent;
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    document.getElementById("tableDisplay").innerHTML = `<p>Error executing query ${queryNumber}</p>`;
+                });
+        }
+    </script>
+</head>
+<body>
+    <h1>MYVC Database Tables</h1>
+    <div>
+        <button onclick="fetchTable('Period')">Period</button>
+        <button onclick="fetchTable('Locations')">Locations</button>
+        <button onclick="fetchTable('CommonInfo')">CommonInfo</button>
+        <button onclick="fetchTable('Personnel')">Personnel</button>
+        <button onclick="fetchTable('Personnel_Assignments')">Personnel Assignments</button>
+        <button onclick="fetchTable('FamilyMembers')">Family Members</button>
+        <button onclick="fetchTable('ClubMembers')">Club Members</button>
+        <button onclick="fetchTable('Memberships')">Memberships</button>
+        <button onclick="fetchTable('Teams')">Teams</button>
+        <button onclick="fetchTable('ClubMembers_Teams')">Club Members Teams</button>
+        <button onclick="fetchTable('Payments')">Payments</button>
+
+    </div>
+    <div>
+
+        <!-- Buttons for SQL Queries -->
+        <button onclick="fetchQuery(1)">Q1</button>
+        <div>
+        <input type="text" id="q2_Input" placeholder="Enter Location ID">
+        <button onclick="fetchQuery(2)">Q2</button>
+        </div>
+        <div>
+
+        <input type="text" id="q3_Input" placeholder="Enter Location ID">
+        <button onclick="fetchQuery(3)">Q3</button>
+        </div>
+        <button onclick="fetchQuery(4)">Q4</button>
+        <div>
+
+
+        <input type="text" id="q5_Input" placeholder="Enter Family member ID">
+        <button onclick="fetchQuery(5)">Q5</button>
+        </div>
+        <div>
+
+        <input type="text" id="q6_Input" placeholder="Enter Location ID">
+        <button onclick="fetchQuery(6)">Q6</button>
+        </div>
+        <div>
+
+        <input type="text" id="q7_Input" placeholder="Enter Club Member ID">
+        <button onclick="fetchQuery(7)">Q7</button>
+        </div>
+        <button onclick="fetchQuery(8)">Q8</button>
+    </div>
+    <div id="tableDisplay"></div>
+</body>
+</html>
