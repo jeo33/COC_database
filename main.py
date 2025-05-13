@@ -1,51 +1,62 @@
 #!/usr/bin/env python3
+"""
+app.py
+
+A simple Flask backend to proxy Clash of Clans API requests.
+Receives requests from any machine and returns player JSON.
+
+Usage:
+  pip install flask requests
+  export COC_API_TOKEN="your_jwt_here"
+  python app.py
+
+Then on another PC, request:
+  curl "http://<EC2_PUBLIC_IP>:5000/player?tag=%238YCYYQ2R"
+"""
+
 import os
 import sys
-import argparse
+from flask import Flask, jsonify, request
 import requests
 import urllib.parse
-import json
-from player import  *
-def fetch_player_info(player_tag: str):
-    # Read API token from environment
-    api_token = os.environ.get("COC_API_TOKEN")
-    if not api_token:
-        print("Error: Please set the COC_API_TOKEN environment variable.", file=sys.stderr)
-        sys.exit(1)
 
-    # URL-encode the tag (handles leading '#')
-    tag_encoded = urllib.parse.quote(player_tag, safe='')
-    url = f"https://api.clashofclans.com/v1/players/{tag_encoded}"
+app = Flask(__name__)
 
+# Load your API token from environment variable
+API_TOKEN = os.getenv("COC_API_TOKEN")
+if not API_TOKEN:
+    print("Error: Please set the COC_API_TOKEN environment variable.", file=sys.stderr)
+    sys.exit(1)
+
+BASE_URL = "https://api.clashofclans.com/v1"
+
+def fetch_player(player_tag: str) -> dict:
+    """Fetch data from Clash of Clans API for a given player tag."""
+    tag_encoded = urllib.parse.quote(player_tag, safe="")
+    url = f"{BASE_URL}/players/{tag_encoded}"
     headers = {
-        "Authorization": f"Bearer {api_token}",
+        "Authorization": f"Bearer {API_TOKEN}",
         "Accept":        "application/json"
     }
-
     resp = requests.get(url, headers=headers)
+    resp.raise_for_status()
+    return resp.json()
+
+@app.route("/player", methods=["GET"])
+def player_endpoint():
+    """
+    Endpoint: /player?tag=#8YCYYQ2R
+    Expects `tag` query parameter with the player tag (including the '#').
+    """
+    tag = request.args.get("tag")
+    if not tag:
+        return jsonify({"error": "Missing 'tag' query parameter"}), 400
     try:
-        resp.raise_for_status()
+        data = fetch_player(tag)
     except requests.HTTPError as e:
-        print(f"HTTP error {resp.status_code}: {e}", file=sys.stderr)
-        sys.exit(resp.status_code)
-    data = resp.json()
-    # or: data = json.loads(resp.text)
-
-    # Instantiate your Pydantic Player model
-    player = Player.parse_obj(data)
-
-    # Now you can access everything as attributes
-    print(player.name)  # → MieMie is 4 cat
-    print(player.clan.name)  # → 龍盟
-    print(len(player.achievements))  # number of achievements
-    print([t.name for t in player.troops[:5]])  # first 5 troop names
-
-def main():
-    parser = argparse.ArgumentParser(description="Fetch Clash of Clans player info")
-    parser.add_argument("player_tag", help="Player tag, e.g. #8YCYYQ2R")
-    args = parser.parse_args()
-
-    fetch_player_info(args.player_tag)
+        return jsonify({"error": str(e), "status_code": e.response.status_code}), e.response.status_code
+    return jsonify(data)
 
 if __name__ == "__main__":
-    main()
+    # Listen on all interfaces so remote PCs can connect
+    app.run(host="0.0.0.0", port=5000, debug=True)
