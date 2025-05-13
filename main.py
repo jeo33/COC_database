@@ -19,6 +19,7 @@ import sys
 from flask import Flask, jsonify, request
 import requests
 import urllib.parse
+from player import *
 
 app = Flask(__name__)
 
@@ -55,7 +56,8 @@ def player_endpoint():
         data = fetch_player(tag)
     except requests.HTTPError as e:
         return jsonify({"error": str(e), "status_code": e.response.status_code}), e.response.status_code
-    return jsonify(data)
+    player = Player.parse_obj(data)
+    return player
 
 if __name__ == "__main__":
     # Listen on all interfaces so remote PCs can connect
