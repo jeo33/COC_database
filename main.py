@@ -56,8 +56,8 @@ def player_endpoint():
         data = fetch_player(tag)
     except requests.HTTPError as e:
         return jsonify({"error": str(e), "status_code": e.response.status_code}), e.response.status_code
-    player = Player.parse_obj(data)
-    return player
+
+    return jsonify(data)
 
 if __name__ == "__main__":
     # Listen on all interfaces so remote PCs can connect
