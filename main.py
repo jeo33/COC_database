@@ -20,9 +20,9 @@ from flask import Flask, jsonify, request
 import requests
 import urllib.parse
 from player import *
-
+from flask_cors import CORS
 app = Flask(__name__)
-
+CORS(app)
 # Load your API token from environment variable
 API_TOKEN = os.getenv("COC_API_TOKEN")
 if not API_TOKEN:
