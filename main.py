@@ -31,22 +31,44 @@ if not API_TOKEN:
 
 BASE_URL = "https://api.clashofclans.com/v1"
 
-def insert_user_stats(user_tag, stats_dict,
-                      host='localhost', user='root',
-                      password='YourRootPassword', db='coc'):
+
+def insert_or_update_user_stats(user_tag, stats_dict,
+                                host='localhost', user='root',
+                                password='n3u8c5t9A!', db='coc'):
+    """
+    Insert a new row into user_stats or update existing one if user_tag already exists.
+
+    :param user_tag: str, primary key (e.g. "#8YCYYQ2R")
+    :param stats_dict: dict, column names → integer values
+    """
+    # 1) Connect
     conn = pymysql.connect(
-        host=host, user=user, password=password, database=db,
+        host=host,
+        user=user,
+        password=password,
+        database=db,
         charset='utf8mb4'
     )
     cursor = conn.cursor()
 
+    # 2) Build the INSERT part
     columns = ', '.join(stats_dict.keys())
     placeholders = ', '.join(['%s'] * len(stats_dict))
-    sql = f"INSERT INTO user_stats (user_tag, {columns}) VALUES (%s, {placeholders})"
+    # 3) Build the UPDATE part
+    update_clause = ', '.join(f"{col}=VALUES({col})" for col in stats_dict.keys())
+
+    sql = (
+        f"INSERT INTO user_stats (user_tag, {columns}) "
+        f"VALUES (%s, {placeholders}) "
+        f"ON DUPLICATE KEY UPDATE {update_clause}"
+    )
     data = [user_tag] + list(stats_dict.values())
 
+    # 4) Execute & commit
     cursor.execute(sql, data)
     conn.commit()
+
+    # 5) Clean up
     cursor.close()
     conn.close()
 def to_snake(s: str) -> str:
