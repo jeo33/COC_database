@@ -33,6 +33,12 @@ if not API_TOKEN:
 BASE_URL = "https://api.clashofclans.com/v1"
 
 
+def get_db():
+    return pymysql.connect(
+        host='localhost', user='root', password='n3u8c5t9A!',
+        database='coc', charset='utf8mb4', cursorclass=pymysql.cursors.DictCursor
+    )
+
 def insert_or_update_user_stats(user_tag, stats_dict,
                                 host='localhost', user='root',
                                 password='n3u8c5t9A!', db='coc'):
@@ -90,6 +96,67 @@ def fetch_player(player_tag: str) -> dict:
     resp = requests.get(url, headers=headers)
     resp.raise_for_status()
     return resp.json()
+
+
+@app.route('/login', methods=['POST'])
+def login():
+    payload = request.get_json()
+    username = payload.get('email')  # or payload['username'] if you rename
+    password = payload.get('password')
+    if not username or not password:
+        return jsonify({'message': 'Missing username or password'}), 400
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT password FROM user WHERE username=%s", (username,))
+            row = cur.fetchone()
+            if not row:
+                return jsonify({'message': 'User not found'}), 404
+
+            # assuming password is stored as integer; cast or hash-check as needed
+            if row['password'] != int(password):
+                return jsonify({'message': 'Invalid credentials'}), 401
+
+            # Success!
+            return jsonify({'message': 'Login successful'}), 200
+    finally:
+        conn.close()
+
+@app.route('/register', methods=['POST'])
+def register():
+    payload = request.get_json()
+    username = payload.get('name')   # or payload['username']
+    password = payload.get('password')
+    if not username or not password:
+        return jsonify({'message': 'Missing username or password'}), 400
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            # Check if user exists
+            cur.execute("SELECT 1 FROM user WHERE username=%s", (username,))
+            if cur.fetchone():
+                return jsonify({'message': 'User already exists'}), 409
+
+            # Insert new user
+            cur.execute(
+                "INSERT INTO user (username, password) VALUES (%s, %s)",
+                (username, int(password))
+            )
+            conn.commit()
+            return jsonify({'message': 'Registration successful'}), 201
+    finally:
+        conn.close()
+
+
+
+
+
+
+
+
+
 
 @app.route("/player", methods=["GET"])
 def player_endpoint():
