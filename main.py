@@ -99,27 +99,36 @@ def fetch_player(player_tag: str) -> dict:
 
 
 @app.route('/login', methods=['POST'])
+@app.route('/login', methods=['POST'])
 def login():
     payload = request.get_json()
-    username = payload.get('email')  # or payload['username'] if you rename
+    username = payload.get('email')      # this is your “username” column
     password = payload.get('password')
+
     if not username or not password:
         return jsonify({'message': 'Missing username or password'}), 400
 
-    conn = get_db()
     try:
+        conn = get_db()
         with conn.cursor() as cur:
-            cur.execute("SELECT password FROM user WHERE username=%s", (username,))
+            # look up the user by both username and password
+            cur.execute("""
+                SELECT username, tag, password
+                  FROM user
+                 WHERE username = %s
+                   AND password = %s
+                """,
+                (username, int(password))
+            )
             row = cur.fetchone()
-            if not row:
-                return jsonify({'message': 'User not found'}), 404
 
-            # assuming password is stored as integer; cast or hash-check as needed
-            if row['password'] != int(password):
+            if not row:
+                # no matching user/password pair
                 return jsonify({'message': 'Invalid credentials'}), 401
 
-            # Success!
-            return jsonify({'message': 'Login successful'}), 200
+            # found a match — return the full record
+            return jsonify(row), 200
+
     finally:
         conn.close()
 
