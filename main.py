@@ -110,7 +110,10 @@ def player_endpoint():
         for key in ('heroes', 'spells','troops',)
         for item in data.get(key, [])
     }
-    insert_or_update_user_stats(tag, combined)
+    combined['tag']=data['tag']
+    combined['townHallLevel']=data['townHallLevel']
+
+    insert_or_update_user_stats(data['tag'], combined)
     return jsonify(data)
 
 if __name__ == "__main__":
