@@ -108,7 +108,7 @@ def player_endpoint():
         to_snake(hero['name']): hero['level']
         for hero in data['heroes']
     }
-    insert_user_stats(tag, hero_levels)
+    insert_or_update_user_stats(tag, hero_levels)
     return jsonify(data)
 
 if __name__ == "__main__":
