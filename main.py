@@ -126,7 +126,7 @@ def login():
 @app.route('/register', methods=['POST'])
 def register():
     payload = request.get_json()
-    username = payload.get('name')   # or payload['username']
+    username = payload.get('email')   # or payload['username']
     password = payload.get('password')
     if not username or not password:
         return jsonify({'message': 'Missing username or password'}), 400
