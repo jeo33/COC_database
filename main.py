@@ -110,7 +110,6 @@ def player_endpoint():
         for key in ('heroes', 'spells','troops',)
         for item in data.get(key, [])
     }
-    combined['tag']=data['tag']
     combined['townHallLevel']=data['townHallLevel']
 
     insert_or_update_user_stats(data['tag'], combined)
