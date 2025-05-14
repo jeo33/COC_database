@@ -13,6 +13,7 @@ Usage:
 Then on another PC, request:
   curl "http://<EC2_PUBLIC_IP>:5000/player?tag=%238YCYYQ2R"
 """
+import pymysql
 import re
 import os
 import sys
