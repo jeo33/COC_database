@@ -128,6 +128,7 @@ def register():
     payload = request.get_json()
     username = payload.get('email')   # or payload['username']
     password = payload.get('password')
+    tag = payload.get('name')
     if not username or not password:
         return jsonify({'message': 'Missing username or password'}), 400
 
@@ -141,8 +142,8 @@ def register():
 
             # Insert new user
             cur.execute(
-                "INSERT INTO user (username, password) VALUES (%s, %s)",
-                (username, int(password))
+                "INSERT INTO user (username, password) VALUES (%s,%s, %s)",
+                (username, tag,int(password))
             )
             conn.commit()
             return jsonify({'message': 'Registration successful'}), 201
