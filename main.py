@@ -105,11 +105,12 @@ def player_endpoint():
     except requests.HTTPError as e:
         return jsonify({"error": str(e), "status_code": e.response.status_code}), e.response.status_code
 
-    hero_levels = {
-        to_snake(hero['name']): hero['level']
-        for hero in data['heroes']
+    combined = {
+        to_snake(item['name']): item['level']
+        for key in ('heroes', 'spells','troops',)
+        for item in data.get(key, [])
     }
-    insert_or_update_user_stats(tag, hero_levels)
+    insert_or_update_user_stats(tag, combined)
     return jsonify(data)
 
 if __name__ == "__main__":
