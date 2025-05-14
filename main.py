@@ -13,7 +13,7 @@ Usage:
 Then on another PC, request:
   curl "http://<EC2_PUBLIC_IP>:5000/player?tag=%238YCYYQ2R"
 """
-
+import re
 import os
 import sys
 from flask import Flask, jsonify, request
@@ -30,6 +30,31 @@ if not API_TOKEN:
     sys.exit(1)
 
 BASE_URL = "https://api.clashofclans.com/v1"
+
+def insert_user_stats(user_tag, stats_dict,
+                      host='localhost', user='root',
+                      password='YourRootPassword', db='coc'):
+    conn = pymysql.connect(
+        host=host, user=user, password=password, database=db,
+        charset='utf8mb4'
+    )
+    cursor = conn.cursor()
+
+    columns = ', '.join(stats_dict.keys())
+    placeholders = ', '.join(['%s'] * len(stats_dict))
+    sql = f"INSERT INTO user_stats (user_tag, {columns}) VALUES (%s, {placeholders})"
+    data = [user_tag] + list(stats_dict.values())
+
+    cursor.execute(sql, data)
+    conn.commit()
+    cursor.close()
+    conn.close()
+def to_snake(s: str) -> str:
+    # lower-case, replace non-alphanum with underscore, strip extras
+    s = s.lower()
+    s = re.sub(r'[^a-z0-9]+', '_', s)
+    return s.strip('_')
+
 
 def fetch_player(player_tag: str) -> dict:
     """Fetch data from Clash of Clans API for a given player tag."""
@@ -57,6 +82,11 @@ def player_endpoint():
     except requests.HTTPError as e:
         return jsonify({"error": str(e), "status_code": e.response.status_code}), e.response.status_code
 
+    hero_levels = {
+        to_snake(hero['name']): hero['level']
+        for hero in data['heroes']
+    }
+    insert_user_stats(tag, hero_levels)
     return jsonify(data)
 
 if __name__ == "__main__":
