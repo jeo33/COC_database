@@ -142,7 +142,7 @@ def register():
 
             # Insert new user
             cur.execute(
-                "INSERT INTO user (username, password) VALUES (%s,%s, %s)",
+                "INSERT INTO user (username,tag, password) VALUES (%s,%s, %s)",
                 (username, tag,int(password))
             )
             conn.commit()
